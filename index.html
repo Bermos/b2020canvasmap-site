@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #map {
+        height: 100%;
+      }
+      /* Optional: Makes the sample page fill the window. */
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script>
+      var map;
+      var heatmap;
+
+      function getNewRadius() {
+        r = Math.pow(2,map.zoom)/100;
+        console.log(r)
+        return r;
+      }
+
+      function initMap() {
+        map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 12,
+          center: {lat: 47.6453116, lng: -122.3311617},
+          mapTypeId: 'roadmap'
+        });
+
+        // Create a <script> tag and set the USGS URL as the source.
+        var script = document.createElement('script');
+
+        // This example uses a local copy of the GeoJSON stored at
+        // http://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_week.geojsonp
+        script.src = '/Seattle_WA-doors.js';
+        document.getElementsByTagName('head')[0].appendChild(script);
+
+        google.maps.event.addListener(map, 'zoom_changed', function () {
+          heatmap.setOptions({radius:getNewRadius()});
+      });
+
+      }
+
+      function doors_callback(results) {
+        var heatmapData = [];
+        for (var i = 0; i < results.length; i++) {
+          var door = results[i];
+          var wt = door.Count >200 ? 0: door.Count;
+
+          var latLng = new google.maps.LatLng(door.Latitude, door.Longitude);
+          var weightedLoc = {
+            location: latLng,
+            weight: door.Count
+          };
+          heatmapData.push(weightedLoc);
+        }
+        heatmap = new google.maps.visualization.HeatmapLayer({
+          data: heatmapData,
+          dissipating: true,
+          radius: 50,
+          maxIntensity: 400,
+          map: map
+        });
+      }
+
+    </script>
+    <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=[KEY]&libraries=visualization&callback=initMap">
+    </script>
+  </body>
+</html>
